@@ -7,8 +7,6 @@ and enumerate its contents.
 """
 
 import os
-import shutil
-import requests
 
 from git import Repo
 from os import path
@@ -22,28 +20,31 @@ def get_catalog_repo_dir():
     )
 
 
-def ensure_local_catalog(catalog_repo_dir):
+def ensure_local_catalog(local_repo_dir):
     print "Looking for local catalog..."
 
     try:
-        os.stat(catalog_repo_dir)
+        os.stat(local_repo_dir)
 
         print "Found local catalog in '{}'...".format(
-            catalog_repo_dir
+            local_repo_dir
         )
     except OSError:
         print "Cloning catalog repository into '{}'...".format(
-            catalog_repo_dir
+            local_repo_dir
         )
 
         Repo.clone_from(
             url='https://github.com/rancher/community-catalog.git',
-            to_path=catalog_repo_dir
+            to_path=local_repo_dir
         )
 
 
-def template_sorter(template):
-    return "{}/{}".format(template.category, template.name)
+def template_sorter(template_metadata):
+    return "{}/{}".format(
+        template_metadata.category,
+        template_metadata.name
+    )
 
 
 if __name__ == "__main__":
@@ -62,9 +63,18 @@ if __name__ == "__main__":
 
     templates = sorted(templates, key=template_sorter)
     for template in templates:
-        print("\t[{}] {}".format(
+        print("\t[{}] {} - DC={}, RC={}".format(
             template.category,
-            template.name
+            template.name,
+            template.has_docker_compose,
+            template.has_rancher_compose
         ))
+
+        if template.has_questions:
+            for question in sorted(template.questions, key=lambda q: q["label"]):
+                print("\t\t{} ({})".format(
+                    question["label"],
+                    question["variable"]
+                ))
 
     print "Done."

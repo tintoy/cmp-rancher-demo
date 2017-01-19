@@ -91,3 +91,6 @@ ENV/
 
 # Cloned (nested) repositories
 repo/
+
+# PyCharm
+.idea/
