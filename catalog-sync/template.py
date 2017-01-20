@@ -5,6 +5,17 @@ import yaml
 from os import path
 
 
+_question_type_map = {
+    "string": "text",
+    "password": "password",
+    "boolean": "checkbox",
+    "int": "number",
+    "enum": "select",
+    "service": "text",
+    "multiline": "multiline"
+}
+
+
 class CatalogTemplate(object):
     """
     Represents a template in a Rancher catalog.
@@ -87,13 +98,29 @@ class CatalogTemplate(object):
             questions = catalog_item["questions"]
 
             for question in self.questions:
-                questions.append({
-                    "id": question["variable"],
-                    "question": question["label"],
-                    "description": question.get("description", question["variable"]),
-                    "type": question["type"],
-                    "required": question["required"]
-                })
+                question_id = question["variable"]
+                question_label = question["label"]
+                if question_label.endswith(":"):
+                    question_label = question_label.rstrip(":")
+
+                question_description = question.get("description", question["variable"])
+                question_type = _translate_question_type(question["type"])
+                question_required = question.get("required", False)
+
+                cmp_question = {
+                    "id": question_id,
+                    "question": question_label,
+                    "description": question_description,
+                    "type": question_type,
+                    "required": question_required
+                }
+
+                if question_type == "select":
+                    cmp_question["options"] = [
+                        str(option) for option in question["options"]
+                    ]
+
+                questions.append(cmp_question)
 
         return catalog_item
 
@@ -112,5 +139,9 @@ class CatalogTemplate(object):
             return False
 
 
-def _parse_questions(rancher_compose_catalog_props):
-    questions = {}
+def _translate_question_type(question_type):
+    """
+    Translate a Rancher question type to its CMP equivalent.
+    """
+
+    return _question_type_map[question_type]

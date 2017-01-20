@@ -6,6 +6,7 @@ For now, all this script does is clone the community catalog
 and enumerate its contents.
 """
 
+import json
 import os
 
 from git import Repo
@@ -76,5 +77,11 @@ if __name__ == "__main__":
                     question["label"],
                     question["variable"]
                 ))
+
+        print "\t\tCatalog JSON:"
+        print "\t\t{}".format(json.dumps(
+            template.to_cmp_catalog_item(),
+            indent=2
+        ).replace("\n", "\n\t\t"))
 
     print "Done."
