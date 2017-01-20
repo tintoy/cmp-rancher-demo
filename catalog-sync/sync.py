@@ -9,6 +9,7 @@ and enumerate its contents.
 import json
 import os
 
+from cmp_client import CMPClient
 from git import Repo
 from os import path
 from template import CatalogTemplate
@@ -80,8 +81,17 @@ if __name__ == "__main__":
 
         print "\t\tCatalog JSON:"
         print "\t\t{}".format(json.dumps(
-            template.to_cmp_catalog_item(),
+            template.to_cmp_service_definition(),
             indent=2
         ).replace("\n", "\n\t\t"))
+
+    client = CMPClient("https://sandbox.cmp.nflex.io/cmp/basic/api", "nflex-11", "ins1ght")
+    for template in templates[:2]:
+        response = client.create_service_definition(
+            template.to_cmp_service_definition()
+        )
+
+        print(response.status_code)
+        print(response.text)
 
     print "Done."

@@ -12,7 +12,7 @@ _question_type_map = {
     "int": "number",
     "enum": "select",
     "service": "text",
-    "multiline": "multiline"
+    "multiline": "textarea"
 }
 
 
@@ -56,16 +56,16 @@ class CatalogTemplate(object):
         self.has_compose_dir = True
 
         # Load docker-compose.yml
-        with open(path.join(self.compose_dir, 'docker-compose.yml')) as docker_compose_yml:
+        with open(path.join(self.compose_dir, "docker-compose.yml")) as docker_compose_yml:
             self.docker_compose = yaml.load(docker_compose_yml)
 
             self.has_docker_compose = True
 
         # Load rancher-compose.yml (if present).
         try:
-            with open(path.join(self.compose_dir, 'rancher-compose.yml')) as rancher_compose_yml:
+            with open(path.join(self.compose_dir, "rancher-compose.yml")) as rancher_compose_yml:
                 self.rancher_compose = yaml.load(rancher_compose_yml)
-                rancher_compose_catalog_props = self.rancher_compose['.catalog']
+                rancher_compose_catalog_props = self.rancher_compose[".catalog"]
 
                 self.has_rancher_compose = True
 
@@ -84,18 +84,24 @@ class CatalogTemplate(object):
 
             self.has_rancher_compose = False
 
-    def to_cmp_catalog_item(self):
+    def to_cmp_service_definition(self):
         """
-        Create a CMP catalog item to represent the template.
+        Create a CMP service definition to represent the template.
         """
 
-        catalog_item = {
-            'name': self.name,
-            'questions': []
+        service_definition = {
+            "name": self.name,
+            "description": self.description,
+            "category": "RANCHER " + self.category,
+            "cost": "0",
+            "cost_type": "p/month",
+            "lead_time": "15",
+            "lead_time_unit": "minute",
+            "questions": []
         }
 
         if self.has_questions:
-            questions = catalog_item["questions"]
+            questions = service_definition["questions"]
 
             for question in self.questions:
                 question_id = question["variable"]
@@ -122,7 +128,7 @@ class CatalogTemplate(object):
 
                 questions.append(cmp_question)
 
-        return catalog_item
+        return service_definition
 
     def _has_docker_compose_file(self, directory):
         """
@@ -133,7 +139,7 @@ class CatalogTemplate(object):
         template_directory = path.join(self.template_dir, directory)
 
         try:
-            with open(path.join(template_directory, 'docker-compose.yml')):
+            with open(path.join(template_directory, "docker-compose.yml")):
                 return True
         except OSError:
             return False
