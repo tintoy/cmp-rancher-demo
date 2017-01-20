@@ -79,19 +79,57 @@ if __name__ == "__main__":
                     question["variable"]
                 ))
 
-        print "\t\tCatalog JSON:"
-        print "\t\t{}".format(json.dumps(
-            template.to_cmp_service_definition(),
-            indent=2
-        ).replace("\n", "\n\t\t"))
-
     client = CMPClient("https://sandbox.cmp.nflex.io/cmp/basic/api", "nflex-11", "ins1ght")
-    for template in templates[:2]:
+    service_definitions_by_name = {}
+    for existing_service_definition in client.list_service_definitions().json():
+        service_definitions_by_name[existing_service_definition["name"]] = existing_service_definition["id"]
+
+    modules_by_name = {}
+    for existing_module in client.list_modules().json():
+        modules_by_name[existing_module["name"]] = existing_module["id"]
+
+    for template in templates:
+        if template.short_name in modules_by_name:
+            module = client.update_module(
+                modules_by_name[template.short_name],
+                template.short_name,
+                template.to_cmp_module_source()
+            ).json()
+        else:
+            module = client.create_module(
+                template.short_name,
+                "service-catalog",
+                template.to_cmp_module_source()
+            ).json()
+
+            modules_by_name[module["name"]] = module["id"]
+
+    service_definition_ids = []
+    for template in templates:
+        if template.name in service_definitions_by_name:
+            service_definition_ids.append(
+                service_definitions_by_name[template.name]
+            )
+            continue
+
+        module_id = modules_by_name[template.short_name]
+
         response = client.create_service_definition(
-            template.to_cmp_service_definition()
+            template.to_cmp_service_definition(module_id)
         )
 
-        print(response.status_code)
-        print(response.text)
+        created_response = response.json()
+
+        service_definitions_by_name[created_response["name"]] = created_response["id"]
+        service_definition_ids.append(
+            created_response["id"]
+        )
+
+    catalog = client.get_service_catalog().json()
+    for service_definition_id in service_definition_ids:
+        if service_definition_id not in catalog["service_defs"]:
+            catalog["service_defs"].append(service_definition_id)
+
+    client.update_service_catalog(catalog)
 
     print "Done."
