@@ -127,7 +127,7 @@ class CatalogTemplate(object):
 
                 cmp_question = {
                     "id": question_id,
-                    "question": question_label,
+                    "question": question_id,  # TODO: Use question_label once CMP passes the question Id to nFlex.
                     "description": question_description,
                     "type": question_type,
                     "required": question_required
